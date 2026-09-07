@@ -1,8 +1,7 @@
 pipeline{
     agent any
     tools{
-        go 'go1.26.7'
-        docker 'latest'
+        go 'Go'
     }
 
 
@@ -30,8 +29,9 @@ pipeline{
         }
         stage('Docker Build'){
             steps{
-                sh 'docker build -t websocket-app:${BUILD_NUMBER} .'
-                sh 'docker tag websocket-app:${BUILD_NUMBER} tu-registry/websocket-app:${BUILD_NUMBER}'
+                script{
+                    docker.build("websocket-for-chat:${BUILD_NUMBER}", ".")
+                }
             }
         }
         stage('Docker Push (Opcional)'){
@@ -39,8 +39,9 @@ pipeline{
                 branch 'main'
             }
             steps{
-                sh 'echo "Aquí iría: docker push tu-registry/websocket-app:${BUILD_NUMBER}"'
-                sh 'echo "Y docker push registry/websocket-app:latest"'
+                sh "docker push tu-registry/websocket-for-chat:${BUILD_NUMBER}"
+                sh "docker tag websocket-for-chat:${BUILD_NUMBER} tu-registry/websocket-for-chat:latest"
+                sh "docker push tu-registry websocket-for-chat:latest"
             }
         }
     }
