@@ -21,6 +21,7 @@ type Usuario struct{
 }
 //Estructura para multiples chats
 var chats = make(map[string]*Chat)
+var chatsMutex = &sync.Mutex{}
 //Upgrader para http to ws
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -38,8 +39,10 @@ func main() {
 
 func getOrCreateChat(chatID string) *Chat {
 	//Recibe chatID y busca dentro de el array de chats
+	chatsMutex.Lock()
 	temp, found := chats[chatID]
 	if found {
+		chatsMutex.Unlock()
 		return temp
 	}
 	//Crea un valor nuevo de Chat dentro de la variable chat
@@ -49,6 +52,7 @@ func getOrCreateChat(chatID string) *Chat {
 	}
 	//Asigna valor a mapa ([K]String -> [V]Chat)
 	chats[chatID] = chat
+	chatsMutex.Unlock()
 
 	/*
 		Función "while true" q se encarga de repartir el mensaje dentro de un
@@ -56,7 +60,14 @@ func getOrCreateChat(chatID string) *Chat {
 	*/
 	go func() {
 		for msg := range chat.broadcast {
+			chat.mu.Lock()
+			usuarios := make([]*Usuario, 0, len(chat.usuarios))
 			for _, u := range chat.usuarios {
+				usuarios = append(usuarios, u)
+			}
+			chat.mu.Unlock()
+			
+			for _, u := range usuarios {
 				u.Conn.WriteMessage(websocket.TextMessage, msg)
 			}
 		}
@@ -91,13 +102,17 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		Conn: conn,
 	}
 	//Introduce el usuario a el array que tiene chat de usuarios
+	chat.mu.Lock()
 	chat.usuarios[usuario.ID] = usuario
+	chat.mu.Unlock()
 	// Se encarga de enviar todos los mensajes nuevos que lleguen a el broadcast del chat
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Error reading message:", err)
+			chat.mu.Lock()
 			delete(chat.usuarios, usuario.ID)
+			chat.mu.Unlock()
 			break
 		}
 		chat.broadcast <- msg
