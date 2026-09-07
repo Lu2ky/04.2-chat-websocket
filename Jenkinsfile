@@ -44,11 +44,11 @@ pipeline{
                 branch 'master'
             }
             steps{
-                withRegistry('https://ghcr.io', 'github-registry-credentials') {
-                script {
-                        docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push()
-                        docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push('latest')
-                    }
+                withRegistry('https://ghcr.io', 'Jenkins-git'){ 
+                    script {
+                            docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push()
+                            docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push('latest')
+                        }
                 }
             }
         }
