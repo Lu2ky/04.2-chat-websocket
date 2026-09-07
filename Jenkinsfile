@@ -8,7 +8,7 @@ pipeline{
     stages{
         stage('checkout Github'){
             steps{
-                git branch: 'main', credentialsId: 'Jenkins-git', url: 'https://github.com/Lu2ky/04.2-chat-websocket.git'
+                git branch: 'master', credentialsId: 'Jenkins-git', url: 'https://github.com/Lu2ky/04.2-chat-websocket.git'
             }
         }
         stage('Install dependencias'){
@@ -36,7 +36,7 @@ pipeline{
         }
         stage('Docker Push (Opcional)'){
             when {
-                branch 'main'
+                branch 'master'
             }
             steps{
                 sh "docker push tu-registry/websocket-for-chat:${BUILD_NUMBER}"
