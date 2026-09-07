@@ -1,14 +1,13 @@
-FROM golang:1.26.8-alpine3.24 AS builder
+FROM golang:1.26.7-alpine3.24 AS builder
 
 WORKDIR /ws
 COPY . .
 RUN go mod tidy
 RUN go test -v -cover
-RUN go build -o websocket .
+RUN CGO_ENABLED=0 go build -o websocket .
 
-
-FROM alpine:latest
+FROM alpine:3.24
 COPY --from=builder /ws/websocket .
-RUN chmod u+x websocket
+RUN chmod +x websocket
 EXPOSE 9012
 CMD ["./websocket"]
