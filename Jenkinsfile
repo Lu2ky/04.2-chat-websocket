@@ -1,5 +1,10 @@
 pipeline{
     agent any
+    
+    triggers {
+        githubPush()
+    }
+    
     tools{
         go 'Go'
     }
@@ -30,27 +35,74 @@ pipeline{
         stage('Docker Build'){
             steps{
                 script{
-                    docker.build("websocket-for-chat:${BUILD_NUMBER}", ".")
+                    def image = docker.build("websocket-for-chat:${BUILD_NUMBER}", ".")
                 }
             }
         }
-        stage('Docker Push (Opcional)'){
+        stage('Docker Push'){
             when {
                 branch 'master'
             }
             steps{
-                sh "docker push tu-registry/websocket-for-chat:${BUILD_NUMBER}"
-                sh "docker tag websocket-for-chat:${BUILD_NUMBER} tu-registry/websocket-for-chat:latest"
-                sh "docker push tu-registry websocket-for-chat:latest"
+                withRegistry('https://ghcr.io', 'github-registry-credentials') {
+                script {
+                        docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push()
+                        docker.image("ghcr.io/tu-usuario/websocket-for-chat:${BUILD_NUMBER}").push('latest')
+                    }
+                }
             }
         }
     }
     post{
         success{
             echo 'Build complete'
+            mail(
+                subject: "BUILD SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """
+                    Build exitoso
+                    
+                    Job: ${JOB_NAME}
+                    Build Number: ${BUILD_NUMBER}
+                    Build URL: ${BUILD_URL}
+                    Status: SUCCESS 
+                    
+                    Cambios:
+                    ${GIT_COMMIT}
+                """,
+                to: "jaaa736504@gmail.com"
+            )
         }
         failure{
             echo 'Build failed'
+            mail(
+                subject: "❌ BUILD FAILED: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """
+                    Build fallo
+                    
+                    Job: ${JOB_NAME}
+                    Build Number: ${BUILD_NUMBER}
+                    Build URL: ${BUILD_URL}
+                    Status: FAILED ❌
+                    
+                    Revisa los logs en: ${BUILD_URL}console
+                """,
+                to: "jaaa736504@gmail.com"
+            )
+        }
+        unstable{
+            echo 'Build unstable'
+            mail(
+                subject: "BUILD UNSTABLE: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """
+                    Build inestable!
+                    
+                    Job: ${JOB_NAME}
+                    Build Number: ${BUILD_NUMBER}
+                    Build URL: ${BUILD_URL}
+                    Status: UNSTABLE 
+                """,
+                to: "jaaa736504@gmail.com"
+            )
         }
     }
 }
