@@ -3,6 +3,7 @@ FROM golang:latest AS builder
 WORKDIR /ws
 COPY . .
 RUN go mod tidy
+RUN go test -v -cover
 RUN go build -o websocket
 
 
