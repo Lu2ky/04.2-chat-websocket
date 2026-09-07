@@ -2,7 +2,7 @@ pipeline{
     agent any
     tools{
         go 'go1.26.7'
-
+        docker 'latest'
     }
 
 
@@ -30,11 +30,8 @@ pipeline{
         }
         stage('Docker Build'){
             steps{
-                script{
-                    docker build -t websocket-app:${BUILD_NUMBER} .
-                    docker tag websocket-app:${BUILD_NUMBER} websocket-app:latest
-                }
-                
+                sh 'docker build -t websocket-app:${BUILD_NUMBER} .'
+                sh 'docker tag websocket-app:${BUILD_NUMBER} tu-registry/websocket-app:${BUILD_NUMBER}'
             }
         }
         stage('Docker Push (Opcional)'){
